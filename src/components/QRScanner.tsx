@@ -16,19 +16,49 @@ export default function QRScanner({ onScan }: QRScannerProps) {
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    const stopScanning = useCallback(async () => {
+        if (scannerRef.current) {
+            try {
+                if (scannerRef.current.isScanning) {
+                    await scannerRef.current.stop();
+                }
+                scannerRef.current.clear();
+            } catch (err) {
+                console.warn('Failed to stop scanner:', err);
+            }
+            scannerRef.current = null;
+        }
+        setIsScanning(false);
+    }, []);
+
     const startScanning = useCallback(async () => {
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         if (!containerRef.current) return;
 
         try {
             setError(null);
+            setIsScanning(true);
+
+            // Cleanup previous instance if exists
+            if (scannerRef.current) {
+                await stopScanning();
+            }
+
             const scanner = new Html5Qrcode('qr-reader');
             scannerRef.current = scanner;
+
+            // Calculate qrbox size based on viewport
+            const width = Math.min(window.innerWidth, window.innerHeight);
+            const qrBoxSize = Math.floor(width * 0.7); // 70% of screen
 
             await scanner.start(
                 { facingMode: 'environment' },
                 {
                     fps: 10,
-                    qrbox: { width: 250, height: 250 },
+                    qrbox: { width: qrBoxSize, height: qrBoxSize },
+                    aspectRatio: 1.0,
                 },
                 (decodedText) => {
                     // Check if it's a valid URL
@@ -36,37 +66,25 @@ export default function QRScanner({ onScan }: QRScannerProps) {
                         new URL(decodedText);
                         setLastScanned(decodedText);
                         onScan(decodedText);
-                        // Stop scanning after successful read
                         stopScanning();
                     } catch {
                         // Not a valid URL, continue scanning
                     }
                 },
                 () => {
-                    // QR code not found - this is normal, scanner keeps trying
+                    // QR code not found - ignore
                 }
             );
 
-            setIsScanning(true);
         } catch (err) {
+            console.error('Scanner start error:', err);
             const errorMessage = err instanceof Error ? err.message : 'カメラを起動できませんでした';
             setError(errorMessage);
-            setIsScanning(false);
+            // Don't stop immediate scanning state to show error in modal
         }
-    }, [onScan]);
+    }, [onScan, stopScanning]);
 
-    const stopScanning = useCallback(async () => {
-        if (scannerRef.current) {
-            try {
-                await scannerRef.current.stop();
-                scannerRef.current = null;
-            } catch {
-                // Ignore stop errors
-            }
-        }
-        setIsScanning(false);
-    }, []);
-
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             stopScanning();
@@ -74,110 +92,61 @@ export default function QRScanner({ onScan }: QRScannerProps) {
     }, [stopScanning]);
 
     return (
-        <NeumorphicCard className="w-full">
-            <div className="space-y-6">
-                <div className="text-center">
-                    <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
-                        QRコードをスキャン
-                    </h3>
-                    <p className="text-[var(--text-secondary)] text-sm">
-                        マニュアルのQRコードをカメラにかざしてください
-                    </p>
+        <div className="w-full">
+            <NeumorphicCard className="w-full text-center py-8">
+                <div className="mb-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-base)] neumorphic-inset mb-4 text-[var(--accent-blue)]">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                        </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">QRコード読み取り</h3>
+                    <p className="text-[var(--text-secondary)] text-sm">カメラを起動してスキャンします</p>
                 </div>
 
-                <div className="relative">
-                    <div
-                        id="qr-reader"
-                        ref={containerRef}
-                        className={`
-              w-full aspect-square max-w-[300px] mx-auto
-              rounded-2xl overflow-hidden
-              neumorphic-inset
-              ${!isScanning ? 'flex items-center justify-center bg-[var(--bg-base)]' : ''}
-            `}
-                    >
-                        {!isScanning && (
-                            <div className="text-center p-8">
-                                <svg
-                                    className="w-16 h-16 mx-auto text-[var(--text-muted)] mb-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={1.5}
-                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                                    />
-                                </svg>
-                                <p className="text-[var(--text-muted)]">
-                                    スキャンを開始してください
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {error && (
-                    <div className="text-center p-4 rounded-xl bg-red-50 text-[var(--accent-red)]">
-                        <p>{error}</p>
-                    </div>
-                )}
+                <NeumorphicButton variant="primary" onClick={startScanning} className="w-full max-w-xs mx-auto">
+                    カメラを起動
+                </NeumorphicButton>
 
                 {lastScanned && (
-                    <div className="text-center p-4 rounded-xl bg-green-50">
-                        <p className="text-sm text-[var(--text-secondary)] mb-1">検出されたURL:</p>
-                        <p className="text-[var(--accent-green)] font-medium break-all text-sm">
-                            {lastScanned}
-                        </p>
+                    <div className="mt-6 p-4 rounded-xl bg-green-50 animate-fade-in">
+                        <p className="text-sm text-[var(--text-secondary)] mb-1">スキャン完了:</p>
+                        <p className="text-[var(--accent-green)] font-medium text-sm break-all">{lastScanned}</p>
                     </div>
                 )}
+            </NeumorphicCard>
 
-                <div className="flex justify-center">
-                    {!isScanning ? (
-                        <NeumorphicButton variant="primary" onClick={startScanning}>
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                                />
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
+            {/* Full Screen Scanner Modal */}
+            {isScanning && (
+                <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+                    <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-10 bg-gradient-to-b from-black/50 to-transparent">
+                        <p className="text-white font-medium text-lg drop-shadow-md">スキャン中...</p>
+                        <button
+                            onClick={stopScanning}
+                            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            スキャン開始
-                        </NeumorphicButton>
-                    ) : (
-                        <NeumorphicButton variant="danger" onClick={stopScanning}>
-                            <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
-                            スキャン停止
-                        </NeumorphicButton>
+                        </button>
+                    </div>
+
+                    <div id="qr-reader" ref={containerRef} className="w-full max-w-md bg-black" />
+
+                    {error && (
+                        <div className="absolute bottom-10 px-6 w-full max-w-sm">
+                            <div className="bg-red-500/90 text-white p-4 rounded-xl text-center backdrop-blur-sm shadow-lg">
+                                <p className="text-sm font-medium">{error}</p>
+                                <button onClick={stopScanning} className="mt-2 text-xs underline opacity-80">閉じる</button>
+                            </div>
+                        </div>
                     )}
+
+                    <div className="absolute bottom-12 text-white/70 text-sm pointer-events-none">
+                        QRコードを枠内にあわせてください
+                    </div>
                 </div>
-            </div>
-        </NeumorphicCard>
+            )}
+        </div>
     );
 }
