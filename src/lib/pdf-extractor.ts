@@ -31,12 +31,16 @@ export async function extractTextFromPDF(pdfData: ArrayBuffer): Promise<string> 
     // Dynamic import to avoid SSR issues
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
-    // Set the worker source
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    // Server-side PDF extraction setup
+    // Do not set workerSrc in Node.js environment as it causes "File URL host must be 'localhost'" error on Vercel
+    // Node.js environment will automatically use a fake worker.
 
     const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(pdfData),
         useSystemFonts: true,
+        // Options to stabilize Node.js execution
+        disableFontFace: true,
+        verbosity: 0,
     });
 
     const pdf = await loadingTask.promise;
