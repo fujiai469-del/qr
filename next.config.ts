@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Use serverExternalPackages to include pdfjs-dist in the server bundle
+  serverExternalPackages: ['pdfjs-dist'],
+  webpack: (config) => {
+    // Ignore canvas dependency which is not needed for text extraction
+    config.resolve.alias.canvas = false;
+    return config;
+  },
 };
 
 export default nextConfig;
