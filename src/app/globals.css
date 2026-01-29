@@ -1,26 +1,218 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Airis Style - White & Clean */
+  --bg-base: #F0F2F5;
+  --bg-white: #FFFFFF;
+  --text-primary: #2D3748;
+  --text-secondary: #718096;
+  --text-muted: #A0AEC0;
+  --accent-blue: #4A90D9;
+  --accent-blue-light: #7EB3F1;
+  --accent-green: #48BB78;
+  --accent-red: #F56565;
+
+  /* Neumorphism shadows */
+  --shadow-light: rgba(255, 255, 255, 0.8);
+  --shadow-dark: rgba(163, 177, 198, 0.6);
+
+  --background: #F0F2F5;
+  --foreground: #2D3748;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Neumorphism Utilities */
+.neumorphic {
+  background: var(--bg-base);
+  border-radius: 20px;
+  box-shadow:
+    8px 8px 16px var(--shadow-dark),
+    -8px -8px 16px var(--shadow-light);
+}
+
+.neumorphic-inset {
+  background: var(--bg-base);
+  border-radius: 16px;
+  box-shadow:
+    inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+}
+
+.neumorphic-flat {
+  background: linear-gradient(145deg, #ffffff, #e6e9ed);
+  border-radius: 16px;
+  box-shadow:
+    6px 6px 12px var(--shadow-dark),
+    -6px -6px 12px var(--shadow-light);
+}
+
+.neumorphic-pressed {
+  background: linear-gradient(145deg, #e6e9ed, #ffffff);
+  border-radius: 16px;
+  box-shadow:
+    inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light);
+}
+
+.neumorphic-card {
+  background: var(--bg-white);
+  border-radius: 24px;
+  box-shadow:
+    10px 10px 20px var(--shadow-dark),
+    -10px -10px 20px var(--shadow-light);
+}
+
+.neumorphic-btn {
+  background: linear-gradient(145deg, #ffffff, #e6e9ed);
+  border-radius: 12px;
+  box-shadow:
+    5px 5px 10px var(--shadow-dark),
+    -5px -5px 10px var(--shadow-light);
+  transition: all 0.2s ease;
+}
+
+.neumorphic-btn:hover {
+  box-shadow:
+    3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+}
+
+.neumorphic-btn:active {
+  box-shadow:
+    inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+.neumorphic-input {
+  background: var(--bg-base);
+  border-radius: 12px;
+  box-shadow:
+    inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.neumorphic-input:focus {
+  box-shadow:
+    inset 4px 4px 8px var(--shadow-dark),
+    inset -4px -4px 8px var(--shadow-light),
+    0 0 0 3px rgba(74, 144, 217, 0.2);
+}
+
+/* Tab styles */
+.tab-active {
+  background: linear-gradient(145deg, #e6e9ed, #ffffff);
+  box-shadow:
+    inset 3px 3px 6px var(--shadow-dark),
+    inset -3px -3px 6px var(--shadow-light);
+}
+
+.tab-inactive {
+  background: linear-gradient(145deg, #ffffff, #e6e9ed);
+  box-shadow:
+    3px 3px 6px var(--shadow-dark),
+    -3px -3px 6px var(--shadow-light);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c9d6;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8b2c3;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s infinite;
+}
+
+/* Chat message styles */
+.chat-bubble-user {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-light));
+  color: white;
+  border-radius: 20px 20px 4px 20px;
+}
+
+.chat-bubble-assistant {
+  background: var(--bg-white);
+  border-radius: 20px 20px 20px 4px;
+  box-shadow:
+    4px 4px 8px var(--shadow-dark),
+    -4px -4px 8px var(--shadow-light);
+}
+
+/* Loading spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--bg-base);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
