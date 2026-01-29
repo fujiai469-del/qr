@@ -32,7 +32,7 @@ export async function extractTextFromPDF(pdfData: ArrayBuffer): Promise<string> 
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
     // Set the worker source
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
     const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(pdfData),
